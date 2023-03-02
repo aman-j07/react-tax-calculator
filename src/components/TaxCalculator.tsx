@@ -7,7 +7,6 @@ import {
   Typography,
 } from "@mui/material";
 import { useState } from "react";
-import { formInputType } from "../types";
 import Form from "./forms/Form";
 
 function TaxCalculator() {
@@ -170,30 +169,98 @@ function TaxCalculator() {
     }
   };
 
-  const calculateHRA = () => {
-    let basicSalary=state.formData.incomes.find((ele) => ele.name === "Basic Salary")!.value;
-    let hra=state.formData.incomes.find((ele) => ele.name === "House Rent Allowance")!.value;
-    let rent=state.formData.deductions.find((ele) => ele.name === "Rent Paid")!.value;
+  // fn to get any value from form data which is numeric
+  const getNumericFormData = (
+    category: "incomes" | "deductions",
+    name: string
+  ) => {
+    let inpObj = state.formData[category].find((ele) => ele.name === name);
+    if (inpObj !== undefined) {
+      return parseFloat(inpObj.value);
+    } else {
+      return -1;
+    }
+  };
 
-    // let hraObj = {
-    //   first: state.formData.incomes.find(
-    //     (ele) => ele.name === "House Rent Allowance"
-    //   )?.value,
-    //   second:state.formData.deductions.find(
-    //     (ele) => ele.name === "Rent Paid"
-    //   )?.value-state.formData.deductions.find(
-    //     (ele) => ele.name === "Rent Paid"
-    //   )?.value.,
-    // };
+  // fn to get any value from form data which is checkbox
+  const getCheckboxFormData = (
+    category: "incomes" | "deductions",
+    name: string
+  ) => {
+    let inpObj = state.formData[category].find((ele) => ele.name === name);
+    if (inpObj !== undefined) {
+      return inpObj.value === "checked";
+    } else {
+      return -1;
+    }
+  };
+
+  const calculateHRA = () => {
+    let basicSalary = getNumericFormData("incomes", "Basic Salary");
+    let hra = getNumericFormData("incomes", "House Rent Allowance");
+    let rentPaid = getNumericFormData("deductions", "Rent Paid");
+    let inMetroCity = getCheckboxFormData(
+      "deductions",
+      "Do you live in a metro city?"
+    );
+
+    let hraObj = {
+      first: hra,
+      second: rentPaid - 0.1 * basicSalary,
+      third: inMetroCity ? 0.5 * basicSalary : 0.4 * basicSalary,
+    };
+
+    let lowest = Math.min(hraObj.first, hraObj.second, hraObj.third);
+    return lowest < 0 ? 0 : lowest;
+  };
+
+  const calculateIncomeTax = (income: number) => {
+    // calculating income tax according to old regime
+    
+    return income;
   };
 
   const taxCalculate = () => {
-    state.results.totalIncome = state.formData.incomes.reduce((a, b) => {
-      let value = b.value.length === 0 ? 0 : parseInt(b.value);
-      return a + value;
+    let totalIncome = state.formData.incomes.reduce((a, b) => {
+      if (b.type === "numeric") {
+        let value = b.value === "" ? 0 : parseFloat(b.value);
+        return a + value;
+      } else {
+        return a + 0;
+      }
+    }, 0);
+    // state.formData.incomes.reduce((a, b) => {
+    //   let value =
+    //     b.value.length === 0 && b.type === "numeric" ? 0 : parseFloat(b.value);
+    //   return a + value;
+    // }, 0);
+
+    let totalDeductions = state.formData.deductions.reduce((a, b) => {
+      if (b.type === "numeric" && b.name !== "Rent Paid") {
+        let value = b.value === "" ? 0 : parseFloat(b.value);
+        return a + value;
+      } else {
+        return a + 0;
+      }
     }, 0);
 
-    setState({ ...state });
+    let hraDeduction = calculateHRA();
+    totalDeductions = totalDeductions + hraDeduction;
+
+    let taxableIncome = totalIncome - totalDeductions;
+    console.log(
+      "totalIncome:",
+      totalIncome,
+      "totalDeductions:",
+      totalDeductions,
+      "hraDeduction:",
+      hraDeduction,
+      "taxableIncome:",
+      taxableIncome
+    );
+    // let incometax=calculateIncomeTax(taxableIncome)
+
+    // setState({ ...state });
   };
 
   const steps = [
