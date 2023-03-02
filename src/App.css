@@ -10,21 +10,13 @@
     font-family: 'Assistant', sans-serif;
 }
 
-.column--vcenter {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
 .formcard__head {
     font-size: 20px;
 }
 
 .form__details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     gap: 20px;
-}
-
-.result {
-    max-width: 250px;
-    margin: auto;
 }
