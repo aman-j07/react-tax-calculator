@@ -4,10 +4,11 @@ import {
   Step,
   StepLabel,
   Stepper,
-  Typography,
 } from "@mui/material";
 import { useState } from "react";
+import { typeState } from "../types";
 import Form from "./forms/Form";
+import Result from "./Result";
 
 function TaxCalculator() {
   const changeHandler = (
@@ -29,7 +30,7 @@ function TaxCalculator() {
     setState({ ...state });
   };
 
-  const [state, setState] = useState({
+  const [state, setState] = useState<typeState>({
     formData: {
       incomes: [
         {
@@ -139,7 +140,9 @@ function TaxCalculator() {
     results: {
       totalIncome: 0,
       totalDeductions: 0,
-      tax: { oldRegime: 0, newRegime: 0 },
+      taxableIncome:0,
+      taxOldRegime: 0,
+      taxNewRegime: 0,
     },
   });
 
@@ -151,7 +154,7 @@ function TaxCalculator() {
         if (ele.required && ele.value === "") {
           ele.error = true;
           found = true;
-        } else if (ele.max !== null && parseInt(ele.value) > ele.max) {
+        } else if (ele.max !== null && parseFloat(ele.value) > ele.max) {
           ele.error = true;
           found = true;
         } else {
@@ -166,6 +169,9 @@ function TaxCalculator() {
       setState({ ...state });
     } else {
       setActiveStep((prev) => prev + 1);
+      if (activeStep === steps.length - 2) {
+        taxCalculate();
+      }
     }
   };
 
@@ -211,13 +217,101 @@ function TaxCalculator() {
     };
 
     let lowest = Math.min(hraObj.first, hraObj.second, hraObj.third);
-    return lowest < 0 ? 0 : lowest;
+    return lowest < 0 ? 0 : Math.round(lowest);
   };
 
   const calculateIncomeTax = (income: number) => {
-    // calculating income tax according to old regime
-    
-    return income;
+    let oldRegimeSlabs = [
+      {
+        upperLimit: Number.POSITIVE_INFINITY,
+        lowerLimit: 1000000,
+        taxPercentage: 30,
+        additionalConstant: 112500,
+      },
+      {
+        upperLimit: 1000000,
+        lowerLimit: 500000,
+        taxPercentage: 20,
+        additionalConstant: 12500,
+      },
+      {
+        upperLimit: 500000,
+        lowerLimit: 250000,
+        taxPercentage: 5,
+        additionalConstant: 0,
+      },
+      {
+        upperLimit: 250000,
+        lowerLimit: 0,
+        taxPercentage: 0,
+        additionalConstant: 0,
+      },
+    ];
+
+    let newRegimeSlabs = [
+      {
+        upperLimit: Number.POSITIVE_INFINITY,
+        lowerLimit: 1500000,
+        taxPercentage: 30,
+        additionalConstant: 187500,
+      },
+      {
+        upperLimit: 1500000,
+        lowerLimit: 1250000,
+        taxPercentage: 25,
+        additionalConstant: 125000,
+      },
+      {
+        upperLimit: 1250000,
+        lowerLimit: 1000000,
+        taxPercentage: 20,
+        additionalConstant: 75000,
+      },
+      {
+        upperLimit: 1000000,
+        lowerLimit: 750000,
+        taxPercentage: 15,
+        additionalConstant: 37500,
+      },
+      {
+        upperLimit: 750000,
+        lowerLimit: 500000,
+        taxPercentage: 10,
+        additionalConstant: 12500,
+      },
+      {
+        upperLimit: 500000,
+        lowerLimit: 250000,
+        taxPercentage: 5,
+        additionalConstant: 0,
+      },
+      {
+        upperLimit: 250000,
+        lowerLimit: 0,
+        taxPercentage: 0,
+        additionalConstant: 0,
+      },
+    ];
+
+    const oldSlab = oldRegimeSlabs.find((ele) => {
+      return income > ele.lowerLimit && income <= ele.upperLimit;
+    });
+    const newSlab = newRegimeSlabs.find((ele) => {
+      return income > ele.lowerLimit && income <= ele.upperLimit;
+    });
+
+    let incomeTax = {
+      oldRegime: Math.round(
+        (income - oldSlab!.lowerLimit) * (oldSlab!.taxPercentage / 100) +
+          oldSlab!.additionalConstant
+      ),
+      newRegime: Math.round(
+        (income - newSlab!.lowerLimit) * (newSlab!.taxPercentage / 100) +
+          newSlab!.additionalConstant
+      ),
+    };
+
+    return incomeTax;
   };
 
   const taxCalculate = () => {
@@ -229,11 +323,6 @@ function TaxCalculator() {
         return a + 0;
       }
     }, 0);
-    // state.formData.incomes.reduce((a, b) => {
-    //   let value =
-    //     b.value.length === 0 && b.type === "numeric" ? 0 : parseFloat(b.value);
-    //   return a + value;
-    // }, 0);
 
     let totalDeductions = state.formData.deductions.reduce((a, b) => {
       if (b.type === "numeric" && b.name !== "Rent Paid") {
@@ -246,21 +335,20 @@ function TaxCalculator() {
 
     let hraDeduction = calculateHRA();
     totalDeductions = totalDeductions + hraDeduction;
+    console.log(totalDeductions, totalIncome);
 
     let taxableIncome = totalIncome - totalDeductions;
-    console.log(
-      "totalIncome:",
-      totalIncome,
-      "totalDeductions:",
-      totalDeductions,
-      "hraDeduction:",
-      hraDeduction,
-      "taxableIncome:",
-      taxableIncome
-    );
-    // let incometax=calculateIncomeTax(taxableIncome)
 
-    // setState({ ...state });
+    let tax = calculateIncomeTax(taxableIncome);
+    state.results = {
+      totalIncome,
+      totalDeductions,
+      taxableIncome,
+      taxOldRegime: tax.oldRegime,
+      taxNewRegime: tax.newRegime,
+    };
+
+    setState({ ...state });
   };
 
   const steps = [
@@ -274,7 +362,6 @@ function TaxCalculator() {
           category={"incomes"}
         />
       ),
-      completed: true,
     },
     {
       label: "Deduction Details",
@@ -286,7 +373,10 @@ function TaxCalculator() {
           category={"deductions"}
         />
       ),
-      completed: true,
+    },
+    {
+      label: "Results",
+      component: <Result result={state.results} />,
     },
   ];
 
@@ -299,6 +389,11 @@ function TaxCalculator() {
   };
 
   const handleReset = () => {
+    let formData=state.formData;
+    Object.values(formData).forEach(ele=>{
+      ele.forEach(innerEle=>innerEle.value='')
+    })
+    setState({...state,formData})
     setActiveStep(0);
   };
 
@@ -316,49 +411,27 @@ function TaxCalculator() {
           );
         })}
       </Stepper>
-      {activeStep === steps.length ? (
-        <>
-          <div className="result">
-            <Typography>Total Income:</Typography>
-          </div>
-          <Box sx={{ display: "flex", flexDirection: "row", pt: 2 }}>
-            <Box sx={{ flex: "1 1 auto" }} />
-            <Button onClick={handleReset}>Reset</Button>
-          </Box>
-        </>
-      ) : (
-        <>
-          {steps[activeStep].component}
-          <Box sx={{ display: "flex", flexDirection: "row", pt: 2 }}>
-            <Button
-              color="inherit"
-              disabled={activeStep === 0}
-              onClick={handleBack}
-              sx={{ mr: 1 }}
-            >
-              Back
-            </Button>
-            <Box sx={{ flex: "1 1 auto" }} />
-            {activeStep === steps.length - 1 ? (
-              <Button
-                onClick={taxCalculate}
-                disabled={!steps[activeStep].completed}
-              >
-                Finish
-              </Button>
-            ) : (
-              <Button
-                onClick={() => {
-                  validate(activeStep);
-                }}
-                disabled={!steps[activeStep].completed}
-              >
-                Next
-              </Button>
-            )}
-          </Box>
-        </>
-      )}
+      {steps[activeStep].component}
+      <Box sx={{ display: "flex", flexDirection: "row", pt: 2 }}>
+        <Button
+          color="inherit"
+          disabled={activeStep === 0}
+          onClick={handleBack}
+          sx={{ mr: 1 }}
+        >
+          Back
+        </Button>
+        <Box sx={{ flex: "1 1 auto" }} />
+
+        <Button
+          onClick={() => {
+            validate(activeStep);
+          }}
+        >
+          Next
+        </Button>
+        {activeStep===steps.length-1? <Button onClick={handleReset}>Reset</Button>:''}
+      </Box>
     </div>
   );
 }

@@ -23,3 +23,8 @@
 .form__details {
     gap: 20px;
 }
+
+.result {
+    max-width: 250px;
+    margin: auto;
+}
