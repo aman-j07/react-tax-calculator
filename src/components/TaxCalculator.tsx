@@ -30,6 +30,7 @@ function TaxCalculator() {
     } else if (inputElement.type === "checkbox") {
       inputElement.value = inputElement.value === "" ? "checked" : "";
     }
+    
     state.formData[category][index] = inputElement;
     setState({ ...state });
   };
@@ -374,6 +375,7 @@ function TaxCalculator() {
     setState({ ...state });
   };
 
+  // steps is an array containing details for steps (object with label and component to be displayed)
   const steps = [
     {
       label: "Income Details",
@@ -403,11 +405,12 @@ function TaxCalculator() {
     },
   ];
 
-
+  // fn to decrease  step by 1
   const handleBack = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
+  // fn to reset form data and take user to the first form
   const handleReset = () => {
     let formData=state.formData;
     Object.values(formData).forEach(ele=>{

@@ -1,5 +1,3 @@
-import { type } from "@testing-library/user-event/dist/type";
-
 export type formInputType = {
   id: number;
   name: string;

@@ -1,4 +1,5 @@
 import { FormControlLabel, Switch, TextField } from "@mui/material";
+import { useEffect } from "react";
 import { formInputType } from "../../types";
 
 type propTypes = {
@@ -16,6 +17,10 @@ type propTypes = {
 function Form(props: propTypes) {
   const { title, inputs, changeHandler, category } = { ...props };
 
+  useEffect(()=>{
+    console.log('rendered')
+  },[])
+
   return (
     <div className="formcard">
       <h4 className="formcard__head">{title}</h4>
@@ -29,7 +34,7 @@ function Form(props: propTypes) {
                 key={ele.id}
                 label={ele.name}
                 required={ele.required}
-                helperText={ele.max !== null ? `max-${ele.max}` : ""}
+                helperText={ele.max !== null ? `Maximum value allowed-${ele.max}` : ""}
                 value={ele.value}
                 disabled={ele.disabled}
                 onChange={(e) => {
