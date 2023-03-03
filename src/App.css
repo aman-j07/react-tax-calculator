@@ -10,10 +10,6 @@
     font-family: 'Assistant', sans-serif;
 }
 
-.formcard__head {
-    font-size: 20px;
-}
-
 .form__details {
     display: flex;
     flex-direction: column;

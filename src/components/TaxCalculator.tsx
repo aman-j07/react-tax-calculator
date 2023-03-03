@@ -1,18 +1,11 @@
-import {
-  Box,
-  Button,
-  Step,
-  StepLabel,
-  Stepper,
-} from "@mui/material";
+import { Box, Button, Step, StepLabel, Stepper } from "@mui/material";
 import { useState } from "react";
 import { typeState } from "../types";
 import Form from "./forms/Form";
 import Result from "./Result";
 
 function TaxCalculator() {
-
-  // fn to handle any change in inputboxes 
+  // fn to handle any change in inputboxes
   const changeHandler = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     category: "incomes" | "deductions",
@@ -22,21 +15,23 @@ function TaxCalculator() {
     let value = e.currentTarget.value;
 
     // validation for numeric data to match with only digits
-    if (
-      inputElement.type === "numeric" &&
-      (value.match(/^\d+$/) || value === "")
-    ) {
-      inputElement.value = value;
+    if (inputElement.type === "numeric") {
+      if (value.match(/^\d+$/) || value === "") {
+        inputElement.value = value;
+      }
+      if(inputElement.max!==null && parseInt(value)>inputElement.max ){
+        inputElement.value = inputElement.max.toFixed();
+      }
     } else if (inputElement.type === "checkbox") {
       inputElement.value = inputElement.value === "" ? "checked" : "";
     }
-    
+
     state.formData[category][index] = inputElement;
     setState({ ...state });
   };
 
   const [state, setState] = useState<typeState>({
-    // key for storing and handling formdata enterred by user 
+    // key for storing and handling formdata enterred by user
     formData: {
       incomes: [
         {
@@ -147,7 +142,7 @@ function TaxCalculator() {
     results: {
       totalIncome: 0,
       totalDeductions: 0,
-      taxableIncome:0,
+      taxableIncome: 0,
       taxOldRegime: 0,
       taxNewRegime: 0,
     },
@@ -182,7 +177,7 @@ function TaxCalculator() {
       setState({ ...state });
     }
     // // if any error is not found increase activestep value
-     else {
+    else {
       setActiveStep((prev) => prev + 1);
       // condition for checking for last step for triggering tax calculating function
       if (activeStep === steps.length - 2) {
@@ -266,7 +261,7 @@ function TaxCalculator() {
         additionalConstant: 0,
       },
     ];
-// array storing slabs of new regime
+    // array storing slabs of new regime
     let newRegimeSlabs = [
       {
         upperLimit: Number.POSITIVE_INFINITY,
@@ -357,7 +352,7 @@ function TaxCalculator() {
     }, 0);
 
     let hraDeduction = calculateHRA();
-    // adding the required deduction for HRA 
+    // adding the required deduction for HRA
     totalDeductions = totalDeductions + hraDeduction;
 
     let taxableIncome = totalIncome - totalDeductions;
@@ -412,11 +407,11 @@ function TaxCalculator() {
 
   // fn to reset form data and take user to the first form
   const handleReset = () => {
-    let formData=state.formData;
-    Object.values(formData).forEach(ele=>{
-      ele.forEach(innerEle=>innerEle.value='')
-    })
-    setState({...state,formData})
+    let formData = state.formData;
+    Object.values(formData).forEach((ele) => {
+      ele.forEach((innerEle) => (innerEle.value = ""));
+    });
+    setState({ ...state, formData });
     setActiveStep(0);
   };
 
@@ -453,7 +448,11 @@ function TaxCalculator() {
         >
           Next
         </Button>
-        {activeStep===steps.length-1? <Button onClick={handleReset}>Reset</Button>:''}
+        {activeStep === steps.length - 1 ? (
+          <Button onClick={handleReset}>Reset</Button>
+        ) : (
+          ""
+        )}
       </Box>
     </div>
   );

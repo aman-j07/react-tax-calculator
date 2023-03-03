@@ -1,5 +1,5 @@
-import { FormControlLabel, Switch, TextField } from "@mui/material";
-import { useEffect } from "react";
+import { FormControlLabel, Switch, TextField, Typography } from "@mui/material";
+import { Box } from "@mui/system";
 import { formInputType } from "../../types";
 
 type propTypes = {
@@ -13,17 +13,16 @@ type propTypes = {
   category: "incomes" | "deductions";
 };
 
-  // this component uses an object array for displayng inputs according and states used are controlled by parent 
+// this component uses an object array for displayng inputs according and states used are controlled by parent
 function Form(props: propTypes) {
   const { title, inputs, changeHandler, category } = { ...props };
 
-  useEffect(()=>{
-    console.log('rendered')
-  },[])
-
   return (
     <div className="formcard">
-      <h4 className="formcard__head">{title}</h4>
+      <Box my={2} alignItems='center'>
+        <Typography variant="h5">{title}</Typography>
+        <Typography textAlign='start' gutterBottom variant="caption">All fields with * are mandatory</Typography>
+      </Box>
       <form className="form__details column--vcenter">
         {inputs.map((ele, index) => {
           let final;
@@ -34,7 +33,9 @@ function Form(props: propTypes) {
                 key={ele.id}
                 label={ele.name}
                 required={ele.required}
-                helperText={ele.max !== null ? `Maximum value allowed-${ele.max}` : ""}
+                helperText={
+                  ele.max !== null ? `Maximum value allowed-${ele.max}` : ""
+                }
                 value={ele.value}
                 disabled={ele.disabled}
                 onChange={(e) => {
