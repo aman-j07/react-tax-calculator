@@ -11,6 +11,8 @@ import Form from "./forms/Form";
 import Result from "./Result";
 
 function TaxCalculator() {
+
+  // fn to handle any change in inputboxes 
   const changeHandler = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     category: "incomes" | "deductions",
@@ -18,6 +20,8 @@ function TaxCalculator() {
   ) => {
     let inputElement = state.formData[category][index];
     let value = e.currentTarget.value;
+
+    // validation for numeric data to match with only digits
     if (
       inputElement.type === "numeric" &&
       (value.match(/^\d+$/) || value === "")
@@ -31,6 +35,7 @@ function TaxCalculator() {
   };
 
   const [state, setState] = useState<typeState>({
+    // key for storing and handling formdata enterred by user 
     formData: {
       incomes: [
         {
@@ -136,6 +141,7 @@ function TaxCalculator() {
           error: false,
         },
       ],
+      // key for storing the details of result
     },
     results: {
       totalIncome: 0,
@@ -146,9 +152,14 @@ function TaxCalculator() {
     },
   });
 
+  // separate state for handling steps for stepper component (MUI)
+  const [activeStep, setActiveStep] = useState(0);
+
+  // fn to validate all the inputs according to the form displayed(i.e. based on activeStep)
   const validate = (index: number) => {
     let formDataArr = Object.values(state.formData)[index];
     let found = false;
+    // using foreach to traverse formdata array to find any wrong values enterred
     formDataArr.forEach((ele) => {
       if (ele.type !== "checkbox") {
         if (ele.required && ele.value === "") {
@@ -163,12 +174,16 @@ function TaxCalculator() {
       }
     });
 
+    // if any error is found state is updated
     if (found) {
       let formKey = Object.keys(state.formData)[index];
       Object.assign(state.formData, { [formKey]: formDataArr });
       setState({ ...state });
-    } else {
+    }
+    // // if any error is not found increase activestep value
+     else {
       setActiveStep((prev) => prev + 1);
+      // condition for checking for last step for triggering tax calculating function
       if (activeStep === steps.length - 2) {
         taxCalculate();
       }
@@ -201,6 +216,7 @@ function TaxCalculator() {
     }
   };
 
+  // fn to calculate the three options for HRA deduction and return lowest
   const calculateHRA = () => {
     let basicSalary = getNumericFormData("incomes", "Basic Salary");
     let hra = getNumericFormData("incomes", "House Rent Allowance");
@@ -220,7 +236,9 @@ function TaxCalculator() {
     return lowest < 0 ? 0 : Math.round(lowest);
   };
 
+  // function to calculate income tax according to both regimes
   const calculateIncomeTax = (income: number) => {
+    // array storing slabs of old regime
     let oldRegimeSlabs = [
       {
         upperLimit: Number.POSITIVE_INFINITY,
@@ -247,7 +265,7 @@ function TaxCalculator() {
         additionalConstant: 0,
       },
     ];
-
+// array storing slabs of new regime
     let newRegimeSlabs = [
       {
         upperLimit: Number.POSITIVE_INFINITY,
@@ -293,6 +311,7 @@ function TaxCalculator() {
       },
     ];
 
+    // using find method for traversing slab arrays and find the right slab for income
     const oldSlab = oldRegimeSlabs.find((ele) => {
       return income > ele.lowerLimit && income <= ele.upperLimit;
     });
@@ -300,6 +319,7 @@ function TaxCalculator() {
       return income > ele.lowerLimit && income <= ele.upperLimit;
     });
 
+    // using object to store both regime taxes (rounded off)
     let incomeTax = {
       oldRegime: Math.round(
         (income - oldSlab!.lowerLimit) * (oldSlab!.taxPercentage / 100) +
@@ -315,6 +335,7 @@ function TaxCalculator() {
   };
 
   const taxCalculate = () => {
+    // calculating total of incomes enterred by user using reduce method
     let totalIncome = state.formData.incomes.reduce((a, b) => {
       if (b.type === "numeric") {
         let value = b.value === "" ? 0 : parseFloat(b.value);
@@ -324,6 +345,7 @@ function TaxCalculator() {
       }
     }, 0);
 
+    // calculating total of incomes enterred by user using reduce method
     let totalDeductions = state.formData.deductions.reduce((a, b) => {
       if (b.type === "numeric" && b.name !== "Rent Paid") {
         let value = b.value === "" ? 0 : parseFloat(b.value);
@@ -334,12 +356,13 @@ function TaxCalculator() {
     }, 0);
 
     let hraDeduction = calculateHRA();
+    // adding the required deduction for HRA 
     totalDeductions = totalDeductions + hraDeduction;
-    console.log(totalDeductions, totalIncome);
 
     let taxableIncome = totalIncome - totalDeductions;
 
     let tax = calculateIncomeTax(taxableIncome);
+
     state.results = {
       totalIncome,
       totalDeductions,
@@ -380,9 +403,6 @@ function TaxCalculator() {
     },
   ];
 
-  console.log(state);
-
-  const [activeStep, setActiveStep] = useState(0);
 
   const handleBack = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
